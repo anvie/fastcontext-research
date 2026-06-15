@@ -27,7 +27,7 @@ for variant_line in "${VARIANTS[@]}"; do
     echo "===== $label ====="
     echo "Flags: $flags"
     echo "Started: $(date '+%H:%M:%S')"
-    python3 eval_v4.py $flags "$QUERIES" "$label"
+    PYTHONUNBUFFERED=1 python3 -u eval_v4.py $flags "$QUERIES" "$label"
     echo "Finished: $(date '+%H:%M:%S')"
     sleep 2
 done
