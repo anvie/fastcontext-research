@@ -158,7 +158,15 @@ def _resolve_workspace_path(p: str) -> str:
     try to find a matching subdirectory or file within WORK_DIR."""
     pp = Path(p)
     if not pp.is_absolute():
-        return str(Path(WORK_DIR) / pp)
+        candidate = Path(WORK_DIR) / pp
+        if candidate.exists():
+            return str(candidate)
+        # Relative with no dirs: glob to find actual file
+        if len(pp.parts) == 1 and pp.name:
+            candidates = list(Path(WORK_DIR).rglob(pp.name))
+            if candidates:
+                return str(min(candidates, key=lambda c: len(str(c))))
+        return str(candidate)
 
     # Check if within workspace
     try:
@@ -167,13 +175,22 @@ def _resolve_workspace_path(p: str) -> str:
     except ValueError:
         pass
 
-    # Auto-correct: try to find matching path within WORK_DIR
-    # e.g. /fastcontext/lib -> /tmp/evonic_fastcontext/lib
+    # Strategy 1: try suffix matching (e.g. /path/to/backend/x.py -> WORK_DIR/backend/x.py)
     parts = pp.parts
     for i in range(1, len(parts)):
         candidate = Path(WORK_DIR) / Path(*parts[i:])
         if candidate.exists():
             return str(candidate)
+
+    # Strategy 2: glob by basename (e.g. /path/to/plugin_hooks.py -> find within WORK_DIR)
+    basename = pp.name
+    if basename:
+        candidates = list(Path(WORK_DIR).rglob(basename))
+        if len(candidates) == 1:
+            return str(candidates[0])
+        elif len(candidates) > 1:
+            # Prefer shortest path (usually the right one)
+            return str(min(candidates, key=lambda c: len(str(c))))
 
     # If no match, just prepend WORK_DIR (best effort)
     return str(Path(WORK_DIR) / pp.relative_to(pp.anchor) if pp.is_absolute() else pp)
@@ -540,11 +557,14 @@ def parse_final_answer(text: str) -> list:
     citations = []
     for line in source.splitlines():
         line = line.strip()
-        match = re.match(r"([/\w._-]+):(\d+)-(\d+)", line)
+        # Support both "file:start-end" and "file:line" formats
+        match = re.match(r"([/\w._-]+):(\d+)(?:-(\d+))?", line)
         if match:
             fname = match.group(1)
             start = int(match.group(2))
-            end = int(match.group(3))
+            end = int(match.group(3)) if match.group(3) is not None else start
+            # Normalize path: resolve /path/to/X -> actual workspace path
+            fname = _resolve_workspace_path(fname)
             citations.append({"file": fname, "lines": list(range(start, end + 1))})
     return citations
 
