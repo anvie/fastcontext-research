@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+results/trajectories_*.json
+results/trajectories_*.jsonl
+results/baseline_*.json
+results/scores_*.json
+results/eval_*.log
+results/*_output.log
+eval.py
+eval_v3.py
+*.gguf
+/tmp/
