@@ -200,6 +200,15 @@ def run_evaluation_v4(queries, run_name="v4"):
 
         if NUDGE:
             traj = run_single_query_nudge(q, i, base_system_prompt, tools, tool_map)
+            if traj is None:
+                # All nudge attempts failed — create empty fallback
+                traj = {
+                    "query_id": q["id"], "query": q["query"],
+                    "ground_truth": q.get("ground_truth", []),
+                    "turns": [], "final_answer": None, "success": False,
+                    "total_latency_ms": 0, "total_turns": 0,
+                    "total_tokens": {"prompt": 0, "completion": 0},
+                }
         else:
             eval_v3.SYSTEM_PROMPT = base_system_prompt
             eval_v3.TOOLS = tools
