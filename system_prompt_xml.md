@@ -41,12 +41,12 @@ Step 3: Output final answer
 </example>
 
 <output>
-End with brief explanation (max 50 words), then &lt;final_answer&gt; tag:
+End with brief explanation (max 50 words), then final_answer tag block:
 
-&lt;final_answer&gt;
+<final_answer>
 /path/to/file.py:10-15 (Reason: "brief explanation")
 /path/to/other.js:102-123
-&lt;/final_answer&gt;
+</final_answer>
 </output>
 
 <environment>

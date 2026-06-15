@@ -483,10 +483,16 @@ def run_single_query(query: dict, idx: int = 0) -> dict:
                     final_answer = content
                     turn_record["final_answer"] = content
                 else:
-                    # Check for <final_answer> in content
+                    # Check for <final_answer> in content (standard + HTML-encoded)
                     m = re.search(r"<final_answer>(.*?)</final_answer>", content, re.DOTALL)
+                    if not m:
+                        m = re.search(r"&lt;final_answer&gt;(.*?)&lt;/final_answer&gt;", content, re.DOTALL)
                     if m:
                         final_answer = m.group(0)
+                        turn_record["final_answer"] = final_answer
+                    elif finish_reason == "stop" and content.strip():
+                        # No explicit tags but model finished — use raw content as answer
+                        final_answer = content.strip()
                         turn_record["final_answer"] = final_answer
 
                 messages.append({"role": "assistant", "content": content})
@@ -517,10 +523,19 @@ TOOL_MAP_REVERSE = {"Read": "Read", "Glob": "Glob", "Grep": "Grep"}
 
 # — Scoring —
 def parse_final_answer(text: str) -> list:
-    """Parse <final_answer> block to extract file:line citations."""
+    """Parse <final_answer> block to extract file:line citations.
+
+    Handles three formats:
+    1. Standard: <final_answer>...</final_answer>
+    2. HTML-encoded: &lt;final_answer&gt;...&lt;/final_answer&gt;
+    3. Free-form: file:line-line patterns in raw text
+    """
     if not text:
         return []
+    # Try standard tags, then HTML-encoded tags
     m = re.search(r"<final_answer>(.*?)</final_answer>", text, re.DOTALL)
+    if not m:
+        m = re.search(r"&lt;final_answer&gt;(.*?)&lt;/final_answer&gt;", text, re.DOTALL)
     source = m.group(1).strip() if m else text.strip()
     citations = []
     for line in source.splitlines():
