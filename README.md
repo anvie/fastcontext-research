@@ -57,13 +57,13 @@ git clone https://github.com/anvie/fastcontext-research /tmp/evonic_fastcontext
 
 ```bash
 cd ~/dev/fastcontext
-python3 eval_v3.py test_queries_v4.jsonl v3i
+python3 src/eval.py data/queries.jsonl v3i
 ```
 
 ### Variant sweep (v4)
 
 ```bash
-python3 eval_v4.py test_queries_v4.jsonl <run_name> \
+python3 src/eval_v4.py data/queries.jsonl <run_name> \
   --prompt-style default|xml|json \
   --tool-case pascal|upper \
   --nudge
@@ -73,13 +73,13 @@ python3 eval_v4.py test_queries_v4.jsonl <run_name> \
 
 ```bash
 # Best config (Markdown + PascalCase + nudge)
-python3 eval_v4.py test_queries_v4.jsonl v3i --prompt-style default --nudge
+python3 src/eval_v4.py data/queries.jsonl v3i --prompt-style default --nudge
 
 # XML format, no nudge
-python3 eval_v4.py test_queries_v4.jsonl xml_test --prompt-style xml
+python3 src/eval_v4.py data/queries.jsonl xml_test --prompt-style xml
 
 # JSON format, UPPERCASE tools, with nudge
-python3 eval_v4.py test_queries_v4.jsonl json_test --prompt-style json --tool-case upper --nudge
+python3 src/eval_v4.py data/queries.jsonl json_test --prompt-style json --tool-case upper --nudge
 ```
 
 ### Output
@@ -107,13 +107,13 @@ python3 eval_v4.py test_queries_v4.jsonl json_test --prompt-style json --tool-ca
 
 | File | Purpose |
 |------|---------|
-| `eval_v3.py` | Main evaluation harness — tool-calling loop + scoring |
-| `eval_v4.py` | Parameterizable variant runner (wraps eval_v3) |
-| `system_prompt.md` | Winning prompt — Markdown format |
-| `system_prompt_xml.md` | XML format prompt (benchmark only — **do not use with 4B**) |
-| `system_prompt_json.md` | JSON format prompt (benchmark only — **do not use with 4B**) |
-| `read.md` / `glob.md` / `grep.md` | Tool descriptions in Markdown |
-| `test_queries_v4.jsonl` | 20 evaluation queries with ground truth |
+| `src/eval.py` | Main evaluation harness — tool-calling loop + scoring |
+| `src/eval_v4.py` | Parameterizable variant runner (wraps eval) |
+| `prompts/default.md` | Winning prompt — Markdown format |
+| `prompts/xml.md` | XML format prompt (benchmark only — **do not use with 4B**) |
+| `prompts/json.md` | JSON format prompt (benchmark only — **do not use with 4B**) |
+| `tools/read.md` / `tools/glob.md` / `tools/grep.md` | Tool descriptions in Markdown |
+| `data/queries.jsonl` | 20 evaluation queries with ground truth |
 | `EVALUATION.md` | Comprehensive report — all variants, per-query matrix, analysis |
 
 ## Key Findings

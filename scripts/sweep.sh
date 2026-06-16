@@ -4,7 +4,7 @@
 
 set -e
 cd ~/dev/fastcontext
-QUERIES="test_queries_v4.jsonl"
+QUERIES="data/queries.jsonl"
 
 echo "===== FastContext v4 Variant Sweep ====="
 echo "Queries: $QUERIES"
@@ -27,7 +27,7 @@ for variant_line in "${VARIANTS[@]}"; do
     echo "===== $label ====="
     echo "Flags: $flags"
     echo "Started: $(date '+%H:%M:%S')"
-    PYTHONUNBUFFERED=1 python3 -u eval_v4.py $flags "$QUERIES" "$label"
+    PYTHONUNBUFFERED=1 python3 -u src/eval_v4.py $flags "$QUERIES" "$label"
     echo "Finished: $(date '+%H:%M:%S')"
     sleep 2
 done
@@ -39,7 +39,7 @@ echo "Finished at: $(date '+%Y-%m-%d %H:%M:%S')"
 # Print summary table
 echo ""
 echo "===== SCORE SUMMARY ====="
-for f in ~/dev/fastcontext/results/scores_*.json; do
+for f in results/scores_*.json; do
     if [ -f "$f" ]; then
         name=$(basename "$f" .json)
         avg=$(python3 -c "

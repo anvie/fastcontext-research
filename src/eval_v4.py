@@ -7,7 +7,7 @@ Supports:
   --tool-case {pascal,upper}          Tool name casing (Read vs READ)
   --nudge                             Enable retry on failure (max 2 nudges)
 
-All other behavior matches eval_v3.py.
+All other behavior matches eval.py.
 """
 import json, os, sys, time
 from datetime import datetime, timezone
@@ -17,13 +17,13 @@ from pathlib import Path
 # We import the v3 module so we can override its globals and reuse its functions.
 # Adding parent to path just in case.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import eval_v3
+import eval
 
 # -- Default config (same as v3) --
-LLAMA_URL    = eval_v3.LLAMA_URL
-WORK_DIR     = eval_v3.WORK_DIR
-MODEL_NAME   = eval_v3.MODEL_NAME
-MAX_TURNS    = eval_v3.MAX_TURNS
+LLAMA_URL    = eval.LLAMA_URL
+WORK_DIR     = eval.WORK_DIR
+MODEL_NAME   = eval.MODEL_NAME
+MAX_TURNS    = eval.MAX_TURNS
 
 # -- CLI flags --
 PROMPT_STYLE = "default"
@@ -61,14 +61,14 @@ def _load_desc(name):
 def load_system_prompt(style):
     """Load system prompt based on style."""
     if style == "xml":
-        tmpl_file = "system_prompt_xml.md"
+        tmpl_file = "xml.md"
     elif style == "json":
-        tmpl_file = "system_prompt_json.md"
+        tmpl_file = "json.md"
     else:
-        tmpl_file = "system_prompt.md"
+        tmpl_file = "default.md"
 
     work_dir_ls = "\n".join(sorted(os.listdir(WORK_DIR)))
-    tmpl = (Path(__file__).parent / tmpl_file).read_text(encoding="utf-8")
+    tmpl = (Path(__file__).parent.parent / "prompts" / tmpl_file).read_text(encoding="utf-8")
     return tmpl.replace("${OS_KIND}", "Linux")\
                .replace("${SHELL_NAME}", os.environ.get("SHELL", "bash"))\
                .replace("${WORK_DIR}", WORK_DIR)\
@@ -93,7 +93,7 @@ def build_nudge_prompt(base_prompt, attempt):
 def build_upper_tools():
     """Return TOOLS list with UPPERCASE tool names."""
     import copy
-    tools = copy.deepcopy(eval_v3.TOOLS)
+    tools = copy.deepcopy(eval.TOOLS)
     name_map = {"Read": "READ", "Glob": "GLOB", "Grep": "GREP"}
     for t in tools:
         old_name = t["function"]["name"]
@@ -104,7 +104,7 @@ def build_upper_tools():
 
 def build_upper_tool_map():
     """Return tool map with UPPERCASE keys."""
-    import eval_v3 as v3
+    import eval as v3
     return {
         "READ":  v3.tool_read,
         "GLOB":  v3.tool_glob,
@@ -132,16 +132,16 @@ def run_single_query_nudge(query, idx, base_system_prompt, tools, tool_map):
             system_prompt = build_nudge_prompt(base_system_prompt, attempt)
 
         # Override v3 globals for this attempt
-        eval_v3.SYSTEM_PROMPT = system_prompt
-        eval_v3.TOOLS = tools
-        eval_v3.TOOL_MAP = tool_map
+        eval.SYSTEM_PROMPT = system_prompt
+        eval.TOOLS = tools
+        eval.TOOL_MAP = tool_map
 
         # Run the query
-        traj = eval_v3.run_single_query(query, idx)
+        traj = eval.run_single_query(query, idx)
 
         # Check if we got a usable result
         if traj.get("success") and traj.get("final_answer"):
-            parsed = eval_v3.parse_final_answer(traj["final_answer"])
+            parsed = eval.parse_final_answer(traj["final_answer"])
             if parsed:
                 # Quick score to decide if worth keeping
                 gt_files = set(gt.get("file", "") for gt in query.get("ground_truth", []))
@@ -180,11 +180,11 @@ def run_evaluation_v4(queries, run_name="v4"):
     if TOOL_CASE == "upper":
         tools = build_upper_tools()
         tool_map = build_upper_tool_map()
-        eval_v3.TOOL_MAP_REVERSE = {"READ": "READ", "GLOB": "GLOB", "GREP": "GREP"}
+        eval.TOOL_MAP_REVERSE = {"READ": "READ", "GLOB": "GLOB", "GREP": "GREP"}
     else:
-        tools = eval_v3.TOOLS
-        tool_map = eval_v3.TOOL_MAP
-        eval_v3.TOOL_MAP_REVERSE = {"Read": "Read", "Glob": "Glob", "Grep": "Grep"}
+        tools = eval.TOOLS
+        tool_map = eval.TOOL_MAP
+        eval.TOOL_MAP_REVERSE = {"Read": "Read", "Glob": "Glob", "Grep": "Grep"}
 
     all_trajectories = []
     all_scores = []
@@ -210,10 +210,10 @@ def run_evaluation_v4(queries, run_name="v4"):
                     "total_tokens": {"prompt": 0, "completion": 0},
                 }
         else:
-            eval_v3.SYSTEM_PROMPT = base_system_prompt
-            eval_v3.TOOLS = tools
-            eval_v3.TOOL_MAP = tool_map
-            traj = eval_v3.run_single_query(q, i)
+            eval.SYSTEM_PROMPT = base_system_prompt
+            eval.TOOLS = tools
+            eval.TOOL_MAP = tool_map
+            traj = eval.run_single_query(q, i)
 
         all_trajectories.append(traj)
 
@@ -229,7 +229,7 @@ def run_evaluation_v4(queries, run_name="v4"):
                 "lines": list(range(start, end + 1))
             })
 
-        score = eval_v3.score_query(traj, gt_converted)
+        score = eval.score_query(traj, gt_converted)
         score["query_id"] = q["id"]
         score["ground_truth"] = gt_converted
         all_scores.append(score)
@@ -299,7 +299,7 @@ if __name__ == "__main__":
             continue
         remaining.append(a)
 
-    queries_file = remaining[0] if remaining else "test_queries.jsonl"
+    queries_file = remaining[0] if remaining else "data/queries.jsonl"
     if len(remaining) > 1:
         run_name = remaining[1]
 

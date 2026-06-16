@@ -8,3 +8,4 @@ results/eval_*.log
 results/*_output.log
 *.gguf
 /tmp/
+results/*.log

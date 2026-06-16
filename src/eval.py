@@ -20,7 +20,7 @@ TOP_P = 0.95
 
 # — Load official tool descriptions —
 def _load_desc(name):
-    p = Path(__file__).parent / f"{name}.md"
+    p = Path(__file__).parent.parent / "tools" / f"{name}.md"
     return p.read_text(encoding="utf-8").strip() if p.exists() else ""
 
 DESC_GREP = _load_desc("grep")
@@ -140,7 +140,7 @@ TOOLS = [
 # — System prompt —
 def load_system_prompt():
     work_dir_ls = "\n".join(sorted(os.listdir(WORK_DIR)))
-    tmpl = (Path(__file__).parent / "system_prompt.md").read_text(encoding="utf-8")
+    tmpl = (Path(__file__).parent.parent / "prompts" / "default.md").read_text(encoding="utf-8")
     return tmpl.replace("${OS_KIND}", "Linux")\
                .replace("${SHELL_NAME}", os.environ.get("SHELL", "bash"))\
                .replace("${WORK_DIR}", WORK_DIR)\
@@ -740,7 +740,7 @@ def run_evaluation(queries: list, run_name: str = "eval"):
 
 # — CLI —
 if __name__ == "__main__":
-    queries_file = sys.argv[1] if len(sys.argv) > 1 else "test_queries.jsonl"
+    queries_file = sys.argv[1] if len(sys.argv) > 1 else "data/queries.jsonl"
     run_name = sys.argv[2] if len(sys.argv) > 2 else "v3"
 
     queries = []
